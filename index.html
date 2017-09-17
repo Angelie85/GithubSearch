@@ -1,0 +1,172 @@
+
+<html>
+<head>
+    <script src="libraries/jquery-3.2.1.min.js"></script>
+
+</head>
+<style>
+    body{
+        font-family: arial;
+    }
+    table{
+        border: 1px solid #cccccc;
+        width: 100%;
+        border-collapse: collapse;
+    }
+    table tr:first-child td {
+        background-color: #99ccff;
+        color:#ffffff;
+        padding:5px;
+    }
+    button{
+        cursor: pointer;
+        background-color: #99ccff;
+        color: #fff;
+        border: 0px;
+        border-radius: 3px;
+        padding: 3px 12px;
+    }
+    .avatarCls{
+        width: 20px;
+    }
+    #active-repo,#active-users{
+        margin-top:10px;
+    }
+</style>
+
+
+<body>
+    <label>Search Repositories Keyword based on stars</label>
+    <input id="repo_keyword" value="react"></input>
+    <button id="hot_repo" > SEARCH </button>
+    <div id="active-repo"></div>
+    <br><br>
+    <label>Search Active Users by location</label>
+    <input id="user_keyword" value="Boston"></input>
+    <button id="prolific_users" > SEARCH </button>
+    <div id="active-users"></div>
+</body>
+
+
+
+<script>
+    // function to create row dynamically by entering columns for a row
+    function createTableRow(tableElementAry,domID){
+        var tableRow=document.createElement("tr");
+        if(domID){
+            tableRow.setAttribute("id", domID);
+        }
+        for (var i=0; i<tableElementAry.length; i++) {
+            var tableColumn = document.createElement("td");
+            tableColumn.append(tableElementAry[i]);
+            tableRow.append(tableColumn);
+        }
+        return tableRow;
+    }
+
+    function renderImage(avatarURL){
+        var image = document.createElement('img');
+        image.setAttribute('class', 'avatarCls');
+        image.setAttribute('src',avatarURL);
+        return image;
+    }
+
+    function renderLink(link, label){
+        var anchor = document.createElement('a');
+        anchor.setAttribute('href', link);
+        anchor.append(label);
+        return anchor;
+
+    }
+
+    // function to render the active user table by looping the response data from the api call.
+    function renderRepoTable(data){
+        var repoTable = document.createElement("table");
+        repoTable.append(createTableRow(['ID', 'NAME', 'DESCRIPTION', 'NUMBER OF STARS']));
+            for (var i=0; i<data.items.length; i++){
+                var tblRow = createTableRow([data.items[i].id, renderLink(data.items[i].html_url ,data.items[i].name), data.items[i].description, data.items[i].stargazers_count]);
+                repoTable.append(tblRow);
+            }
+        $('#active-repo').html(repoTable);
+    }
+
+    // function to render the active user table by looping the response data from the api call.
+    function renderUserTable(data){
+        var usersTable = document.createElement("table");
+        usersTable.append(createTableRow(['ID', 'LOGIN', 'AVATAR IMAGE', 'NUMBER OF FOLLOWERS', 'NUMBER OF PUBLIC REPOS']));
+        for (var i=0; i<data.items.length; i++){
+            var tblRow = createTableRow([data.items[i].id, renderLink(data.items[i].html_url ,data.items[i].login), renderImage(data.items[i].avatar_url), '', ''],data.items[i].id);
+            usersTable.append(tblRow);
+            loadFollowers("https://api.github.com/users/"+data.items[i].login, data.items[i].id);
+            loadrepo("https://api.github.com/users/"+data.items[i].login, data.items[i].id);
+        }
+        $('#active-users').html(usersTable);
+    }
+
+    function loadHotRepo(){
+        // api call to get active users from github
+        var url = "https://api.github.com/search/repositories?q="+$('#repo_keyword')[0].value+"&sort=stars&order=desc&page=1&per_page=5"
+        $.ajax({
+            type: "GET",
+            url: url,
+            success: function(response){
+                renderRepoTable(response);
+            }
+        });
+    }
+
+
+    function loadTopActiveUsers (){
+        // api call to get active users from github
+        var active_url = "https://api.github.com/search/users?q=location:"+$('#user_keyword')[0].value+"&order=desc&page=1&per_page=5"
+        $.ajax({
+            type: "GET",
+            // url: "https://api.github.com/search/users?q=created:>=2016-06-04&sort=followers&order=desc&page=1&per_page=5",
+              url: active_url,
+            success: function(response){
+                renderUserTable(response);
+            }
+        });
+    }
+
+    function loadFollowers (url, domId){
+        // api call to get active users from github
+        $.ajax({
+            type: "GET",
+            url: url,
+            success: function(response){
+                // only to get the number of followers
+                setFollower (response.followers, domId);
+            }
+        });
+    }
+    function loadrepo (url, domId){
+        // api call to get active users from github
+        $.ajax({
+            type: "GET",
+            url: url+'',
+            success: function(response){
+                // only to get the number of repo
+                setRepo (response.public_repos, domId);
+            }
+        });
+    }
+    function setFollower(numFollower, domId){
+        $("#"+domId+" td:nth-child(4)").html(numFollower);
+    }
+
+    function setRepo(numOfRepo, domId){
+        $("#"+domId+" td:nth-child(5)").html(numOfRepo);
+    }
+
+
+
+
+
+    loadHotRepo();
+    loadTopActiveUsers();
+
+    $('#hot_repo').click(function(){loadHotRepo()});
+    $('#prolific_users').click(function(){loadTopActiveUsers()});
+</script>
+</html>
