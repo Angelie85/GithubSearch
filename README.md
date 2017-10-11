@@ -1,4 +1,5 @@
 # GithubSearch
+One file using Jquery to demonstrate seach on Github
 
 For the first table, user is able to enter key word and search of the first 5 most stars repositories from github.  By default it is searched by keyword "react"
 
